@@ -1,81 +1,75 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+# You may wish to alter this file to override the set of languages analyzed,
+# or to provide custom queries or build logic.
+#
+# ******** NOTE ********
+# We have attempted to detect the languages in your repository. Please check
+# the `language` matrix defined below to confirm you have the correct set of
+# supported CodeQL languages.
+#
+name: "CodeQL"
 
+on:
+  push:
+    branches: [ master, stable* ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ master, stable* ]
+  schedule:
+    - cron: '30 8 * * 6'
+    
+permissions:
+  contents: read
 
-#Create a User in Linux :
+jobs:
+  analyze:
+    permissions:
+      security-events: write
+    name: Analyze
+    runs-on: ubuntu-latest
 
-import os
-username = "user" #@param {type:"string"}
-password = "root" #@param {type:"string"}
-print("Creating User and Setting it up")
-os.system(f"useradd -m {username}")
-os.system(f"adduser {username} sudo")
-os.system(f"echo '{username}:{password}' | sudo chpasswd")
-os.system("sed -i 's/\/bin\/sh/\/bin\/bash/g' /etc/passwd")
-print("User Created and Configured")
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
+        # Learn more:
+        # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
 
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-#Remote Desktop Install
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+        # queries: ./path/to/local/query, your-org/your-repo/queries@main
 
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
+    # If this step fails, then you should remove it and run the build manually (see below)
+    # - name: Autobuild
+    #   uses: github/codeql-action/autobuild@v2
 
-import os
-import subprocess
+    # ℹ️ Command-line programs to run using the OS shell.
+    # 📚 https://git.io/JvXDl
 
+    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
+    #    and modify them (or add more) to build your code if your project
+    #    uses a compiled language
 
-
-CRP = "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code="4/0AWtgzh4Jg3ikmmZwVP71xMgsrSRGUQESeAYNrlXfG7qp9S_U97EyUaJIpe541eKweWHPpg" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name=$(hostname)" #paste your rdp link
-
-Pin = 12131415 #pin
-
-
-class CRD:
-    def __init__(self):
-        os.system("apt update")
-        self.installCRD()
-        self.installDesktopEnvironment()
-        self.installGoogleChorme()
-        self.finish()
-
-    @staticmethod
-    def installCRD():
-        print("Installing Chrome Remote Desktop")
-        subprocess.run(['wget', 'https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb'], stdout=subprocess.PIPE)
-        subprocess.run(['dpkg', '--install', 'chrome-remote-desktop_current_amd64.deb'], stdout=subprocess.PIPE)
-        subprocess.run(['apt', 'install', '--assume-yes', '--fix-broken'], stdout=subprocess.PIPE)
-
-    @staticmethod
-    def installDesktopEnvironment():
-        print("Installing Desktop Environment")
-        os.system("export DEBIAN_FRONTEND=noninteractive")
-        os.system("apt install --assume-yes xfce4 desktop-base xfce4-terminal")
-        os.system("bash -c 'echo \"exec /etc/X11/Xsession /usr/bin/xfce4-session\" > /etc/chrome-remote-desktop-session'")
-        os.system("apt remove --assume-yes gnome-terminal")
-        os.system("apt install --assume-yes xscreensaver")
-        os.system("systemctl disable lightdm.service")
-
-    @staticmethod
-    def installGoogleChorme():
-        print("Installing Google Chrome")
-        subprocess.run(["wget", "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"], stdout=subprocess.PIPE)
-        subprocess.run(["dpkg", "--install", "google-chrome-stable_current_amd64.deb"], stdout=subprocess.PIPE)
-        subprocess.run(['apt', 'install', '--assume-yes', '--fix-broken'], stdout=subprocess.PIPE)
-
-    @staticmethod
-    def finish():
-        print("Finalizing")
-        os.system(f"adduser {username} chrome-remote-desktop")
-        command = f"{CRP} --pin={Pin}"
-        os.system(f"su - {username} -c '{command}'")
-        os.system("service chrome-remote-desktop start")
-        print("Finished Succesfully")
-
-
-try:
-    if username:
-        if CRP == "":
-            print("Please enter authcode from the given link")
-        elif len(str(Pin)) < 6:
-            print("Enter a pin more or equal to 6 digits")
-        else:
-            CRD()
-except NameError as e:
-    print("username variable not found")
-    print("Create a User First")
+    - run: |
+       sudo apt update
+       sudo apt install libxrandr-dev libxinerama-dev libusb-1.0-0-dev xserver-xorg-dev libswscale-dev libswresample-dev libavutil-dev libavcodec-dev libcups2-dev libpulse-dev libasound2-dev libpcsclite-dev xsltproc libxcb-cursor-dev libxcursor-dev libcairo2-dev libfaac-dev libfaad-dev libjpeg-dev libgsm1-dev ninja-build libxfixes-dev libxkbcommon-dev libwayland-dev libpam0g-dev libxdamage-dev libxcb-damage0-dev ccache libxtst-dev libfuse-dev libsystemd-dev libcairo2-dev libsoxr-dev libsdl2-dev
+       mkdir ci-build
+       cd ci-build
+       cmake -GNinja ../ci/cmake-preloads/config-linux-all.txt ..
+       cmake --build .
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
